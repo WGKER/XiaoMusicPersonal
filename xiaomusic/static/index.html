@@ -4,7 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="manifest" href="/static/manifest.json" />
+<!-- 注销浏览器标签页图标
   <link rel="icon" href="/static/favicon.ico" />
+-->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>小爱音箱操控面板</title>
 
@@ -34,25 +36,14 @@
 </head>
 
 <body>
-  <div class="deprecation-banner" role="alert">
-    <div class="deprecation-banner__inner">
-      <span class="deprecation-banner__icon" aria-hidden="true">📢</span>
-      <div class="deprecation-banner__text">
-        <strong>项目停止维护通知：</strong>
-        因个人精力有限，作者已将重心转移到其他项目，本项目将停止维护。后续推荐使用社区接力项目
-        <a href="https://github.com/songloft-org/songloft" target="_blank" rel="noopener">songloft-org/songloft</a>，
-        感谢一路以来的支持 ❤️
-      </div>
-    </div>
-  </div>
   <div class="container_wrapper">
     <div class="logo">
       <img src="/static/xiaoai.png" alt="" />
     </div>
     <div class="desc">
-      <h1>谁家灯火夜通明</h1>
-      <p class="call">小爱同学？</p>
-      <p class="answer">哎，我在</p>
+      <h1>播放本地音乐</h1>
+      <p class="call"> 小爱同学 </p>
+      <p class="answer"> 哎，我在 </p>
     </div>
     <div class="options">
       <!-- 选择主题 /static/[theme] -->
@@ -80,9 +71,11 @@
           <span style="font-size: 0.7em; opacity: 0.7; margin-top: 2px;">iPhone手机播放器</span>
         </a>
       </div>
+<!--
       <div class="options_list weapp">
         <a href="https://github.com/F-loat/xiaoplayer" target="_blank">微信小程序</a>
       </div>
+-->
       <div class="options_list">
         <a href="https://github.com/jokezc/mi_music" target="_blank">风花雪乐 APP</a>
       </div>
@@ -101,7 +94,7 @@
     </div>
   </div>
   <footer>
-    Powered by <a href="https://xdocs.hanxi.cc">XiaoMusic</a>
+    Powered by <a href="https://xdocs.hanxi.cc">XiaoMusic</a> Version:0.6.1<!--此处手动填写版本号，因为默认页和设置页删除了版本号及链接-->
   </footer>
   <style>
     @font-face {
@@ -217,7 +210,7 @@
     }
 
     .container_wrapper .logo img {
-      width: 160px;
+      width: 200px;
       height: auto;
       filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.5));
       transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
