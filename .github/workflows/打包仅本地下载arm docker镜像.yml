@@ -5,7 +5,7 @@ on:
 # 只在这里两处修改，一处镜像名、一处标签，其余自动同步
 env:
   IMAGE_NAME: xiaomusic
-  IMAGE_TAG: v2.0
+  IMAGE_TAG: 0.6.1
 
 permissions:
   contents: write
