@@ -1,0 +1,117 @@
+name: 打包arm docker镜像上传release
+
+# 只保留手动触发，取消代码推送、tag自动触发
+on:
+  workflow_dispatch:
+
+env:
+  VERSION_TAG: ${{ secrets.DOCKERHUB_USERNAME }}/xiaomusic:${{ github.ref_name }}
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 仅ARM架构
+        platform: [arm64, armv7]
+        include:
+          - platform: arm64
+            arch: arm64
+          - platform: armv7
+            arch: arm/v7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 不再登录DockerHub，注释掉
+      # - name: Login to Docker Hub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image for ${{ matrix.platform }}
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/${{ matrix.arch }}
+          context: .
+          push: false
+          load: true
+          tags: ${{ env.VERSION_TAG }}
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+
+      - name: Test Docker image for ${{ matrix.platform }}
+        run: |
+          docker run --rm ${{ env.VERSION_TAG }} /app/.venv/bin/python3 /app/xiaomusic.py -h
+
+      - name: Save ${{ matrix.platform }} image to tar
+        run: |
+          docker save ${{ env.VERSION_TAG }} -o xiaomusic-${{ github.ref_name }}-${{ matrix.platform }}.tar
+
+      - name: Upload Docker images as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images-${{ matrix.platform }}
+          path: xiaomusic-${{ github.ref_name }}-${{ matrix.platform }}.tar
+          retention-days: 30
+
+  # 保留上传tar包到GitHub Release，删掉DockerHub推送、PyPI任务
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: docker-images-*
+          merge-multiple: true
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install -y gh
+
+      - name: Create or update Release tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_NAME=${{ github.ref_name }}
+          RELEASE_BODY="This release is manually triggered CI build from ${RELEASE_NAME} branch."
+
+          EXISTING_RELEASE=$(gh release view "${RELEASE_NAME}" --json id --jq .id || echo "")
+
+          if [[ -n "${EXISTING_RELEASE}" ]]; then
+            echo "Release exists, will overwrite assets"
+          else
+            gh release create "${RELEASE_NAME}" \
+              --prerelease=false \
+              --title "${RELEASE_NAME}" \
+              --notes "${RELEASE_BODY}"
+          fi
+
+      - name: Upload assets to Release tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_NAME=${{ github.ref_name }}
+
+          FILES=$(find . -type f -name "xiaomusic-*.tar")
+          for FILE in ${FILES}; do
+            echo "Uploading ${FILE}"
+            gh release upload "${RELEASE_NAME}" "${FILE}" --clobber
+          done
